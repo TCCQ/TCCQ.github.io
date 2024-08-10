@@ -1,0 +1,1 @@
+This is my personal website. Hopefully it will move off github sometime soon. It was made with Emacs org to generate html, and a stylesheet called water.css from these fine people! https://watercss.kognise.dev/
