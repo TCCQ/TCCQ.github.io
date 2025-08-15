@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2025-08-15 Fri 14:35 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>&lrm;</title>
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="css/dark.css"/>
+</head>
+<body>
+<div id="preamble" class="status">
+<div style="border-bottom:1px solid black;padding-bottom:1px">
+<p><a href="https://roscoeeh.github.io/">Prev</a> <a href=index.html>Home</a> <a href=projects.html>Projects</a> <a href=blog.html>Blog</a> <a href="https://elle-wen.github.io/">Next</a></p>
+</div>
+</div>
+<div id="content" class="content">
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org1b27084">1. Site Overhaul - 2025/06/27</a>
+<ul>
+<li><a href="#orgd9393f1">1.1. Site Creation</a></li>
+<li><a href="#orgc413c2e">1.2. Hosting</a></li>
+<li><a href="#orgd3ec475">1.3. Expression</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org1b27084" class="outline-2">
+<h2 id="org1b27084"><span class="section-number-2">1.</span> Site Overhaul - 2025/06/27</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+Over the last few days, I have been completely overhauling this
+site. This is motivated by the fact that I have had two versions of
+what my personal website could be kicking around on my computer for
+more than a year now. The first is a single page that basically acts
+as a prose extension of my resume. It has been hosted at the github
+free hosting for my github account. The second is a more involved site
+that would encourage me to extend and improve it over time. The idea
+was that it would contain all the content that the static github
+version has, but would make it easier to extend. Also it likely
+wouldn't be hosted on github.
+</p>
+</div>
+<div id="outline-container-orgd9393f1" class="outline-3">
+<h3 id="orgd9393f1"><span class="section-number-3">1.1.</span> Site Creation</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+The initial version of the github site was created using Emacs's Org
+mode and the exporting and publishing features to programatically
+compile a set of org files and static data like images and PDFs into
+nice HTML, handling all the links and connections smoothly.
+</p>
+
+<p>
+For this refactored version, I've continued to use org as the
+proverbial framework, since it is naturally integrated with emacs and
+is a sensible middle ground between a full framework for complicated
+site features and writing HTML by hand. I've also eschewed the use of
+various external packages and extensions to org modes publishing
+options out of both ideology and the fact that I really don't see any
+reason why my site should be more complicated than just a few pages
+linked together. Keeping to just the features included in the standard
+org publishing suite also allows the environment for updating my
+website to exist entirely within the confines of emacs and thus be
+(generally) portable.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc413c2e" class="outline-3">
+<h3 id="orgc413c2e"><span class="section-number-3">1.2.</span> Hosting</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+The previous version of my site was hosted on github, as previously
+mentioned. However in recent times I have made some strides in
+improving the up-time and reachability of the headless server I run
+personally. While it's hardly reliable (mostly due to my ISP's
+frequent downtime and constant shuffling of IP addresses), I would
+like to generally move away from github and freemium style services
+in the direction of either simple services I am willing to pay for
+(i.e. Mullvad) or self hosting. Additionally, for my own projects I
+have no need for the automated tooling and other features github
+provides. Finally, it would be nice to actually have something
+interesting at the domain I control.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd3ec475" class="outline-3">
+<h3 id="orgd3ec475"><span class="section-number-3">1.3.</span> Expression</h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+Part of this site revamp idea was that I would also include a blog as
+part of it, as it would add some texture to my somewhat faceless
+resume / professional image, and I'd like to think at least some of my
+ideas are interesting. The credit for the final push goes to my friend
+Elle (a participant in this webring hopefully), who had made some
+similar additions to her own site and encouraged me to do the same.
+</p>
+
+<p>
+However producing a blog page that was formatted in the way I was
+hoping for (i.e. indexible posts that support the full strength of the
+org-&gt;HTML exporter that display in the same page) was less than
+smooth. The most basic idea would be to simply write out the blog
+posts as headers in a single long org file. This is naturally
+unwieldy, so I wanted to have some system that would allow me to write
+each post in a separate file and then have them collated at export.
+</p>
+
+<p>
+At first blush this seemed easy enough. Org mode features an include
+macro that would splice in the contents of another file at export
+time, and a macro system that would hopefully allow one to
+expand to the full set of files to be included. However this was not
+quite enough, since both the macro and the include would be expanded a
+single time during the initial pass over the org file, and thus if the
+macro expanded to an include, the include would be treated as an org
+comment rather than a directive and thus would have no effect on the
+exported output.
+</p>
+
+<p>
+The solution was easy enough however, I simply had to make the macro
+call out to standard elisp and then do the more complicated work
+there, where I had a more flexible, familiar, and composable
+semantics. The final version of the solution was quite compact:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs_lisp">(defun my/find-org-files-in-dir (dir)
+  (with-temp-buffer
+    (call-process "find" nil (current-buffer) nil
+                  dir "-type" "f" "-name" "*.org")
+    (sort-lines nil (point-min) (point-max))
+    (let* ((s (buffer-string))
+           (ls (s-lines s))
+           (fls (-filter (lambda (l) (not (string-empty-p l))) ls)))
+      fls)))
+
+(defun my/concat-file-contents (files)
+  (with-temp-buffer
+    (mapc 'insert-file-contents files)
+    (buffer-string)))
+</pre>
+</div>
+
+<p>
+And invoke it like so:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nil">#+macro: splice-dir (eval (my/concat-file-contents (my/find-org-files-in-dir $1)))
+{{{splice-dir(/home/tmu/Desktop/site/org/blog/)}}}
+</pre>
+</div>
+
+
+<p>
+All in all, hardly the most exciting hack but in the immortal words of
+<a href="https://xkcd.com/196">XKCD 196</a>, Linux (read Emacs) gives you the tools to deal with your
+problems. The only question that remains is when you begin to get a
+taste for solving your own problems and the journey with your computer
+from non-functional to semi-functional becomes its own reward, can you
+really say that your situation is better than the non-technical people
+who don't think about their tools at all? I certainly know how I feel
+about it, but from the outside looking in one can only imagine I
+appear quite the fool. How could he know so much and have so many
+problems? All I can do is assure them that it's an acquired taste.
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Created: 2025-08-15 Fri 14:35</p>
+</div>
+</body>
+</html>
